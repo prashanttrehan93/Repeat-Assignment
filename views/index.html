@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Google App Engine | Home</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <link rel="stylesheet" type="text/css" href="assets/bootstrap/css/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="assets/css/main.css">
+
+	<link href="assets/css/css" rel="stylesheet" type="text/css">
+	<link href="assets/css/nifty.min.css" rel="stylesheet">
+	<link href="assets/css/nifty-demo-icons.min.css" rel="stylesheet">
+	<link href="assets/css/pace.min.css" rel="stylesheet">
+	<link href="assets/css/nifty-demo.min.css" rel="stylesheet">
+
+    <script type="text/javascript" src="assets/js/jquery-1.10.2.min.js"></script>
+    <script type="text/javascript" src="assets/bootstrap/js/bootstrap.min.js"></script>
+</head>
+<body>
+    {% if errormessage %}
+        <script type="text/javascript">
+            alert('{{ errormessage }}');
+        </script>
+    {% endif %}
+
+<div class="container colored">
+    <!-- Custom Navbar - START -->
+    <div class="container mix" style="margin-top:20px">
+        <nav class="navbar navbar-custom">
+            <div class="container" style="text-align:center; margin-top:10px">
+                <span class="headline">File Manager</span>
+                <a href="/signout" style="color: white; font-size: 15px; margin-top: 10px; margin-left:50rem" >Sign out     <i class="fa fa-sign-out" style="font-size:20px"></i></a>
+            </div>
+        </nav>
+    </div>
+
+    <div class="container">
+
+        <div class="fluid file-panel" style="height: 500px; overflow: scroll;">
+            <div class="bord-btm pad-ver">
+                <ol class="breadcrumb" style="font-size: 25px">
+                    <i class="fa fa-folder" style="margin-right: 10px; margin-top: 8px"></i>
+                    {% if not breadcrumb %}
+                        <i class="fa fa-chevron-right"></i>
+                    {% endif %}
+                    {% for element in breadcrumb %}
+                        <li class="breadcrumb-item">
+                            <a class="black-text" href="/?path={{ element.route }}">{{ element.name }}</a>
+                        </li>
+                    {% endfor %}
+                </ol>
+            </div>
+            <input type="hidden" id="path" value="{{ path }}">
+            <ul id="demo-mail-list" class="file-list">
+
+                <!--Folder list item-->
+                {% for item in folderitems %}
+                    <li>
+                        <div class="file-settings" style="font-size: 20px">
+                            {% if item.name != '..'%}
+                            <a href="javascript:delFolder('{{ item.name }}')" data-toggle="tooltip" data-placement="bottom" title="Delete">
+                                <i class="fa fa-trash" ></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="file-attach-icon"></div>
+                        <div class="media-block" onclick="toSub('{{item.name}}')" style="cursor: pointer">
+                            <div class="media-left" style="font-size: 33px">
+                                {% if item.name != '..'%}
+                                    <i class="fa fa-folder"></i>
+                                {% else %}
+                                    <i class="fa fa-arrow-up" style="margin-right: 10px" data-toggle="tooltip" data-placement="bottom" title="up"></i>
+                                {% endif %}
+                            </div>
+                            <div class="media-body">
+                                <p class="file-name">{{ item.name }}</p>
+                                {% if item.name != '..'%}
+                                    <small>{{ item.cdate }} | Sub folders:{{ item.dnumber }} | Files:{{ item.fnumber }} | Total size:{{ item.fsize }}KB</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+
+                <!--File list item-->
+                {% for item in fileitems %}
+                    <li>
+                        <div class="file-settings" style="font-size: 18px">
+                            <a href="/download/{{ item.blob_key }}/{{ item.name }}" data-toggle="tooltip" data-placement="bottom" title="Download">
+                                <i class="fa fa-download" ></i>
+                            </a>
+                            <a class="move-file" data-id="{{item.name}}" data-placement="bottom" title="File Move" data-toggle="modal" data-target="#move_file_modal" style="cursor: pointer">
+                                <i class="fa fa-scissors" aria-hidden="true"></i>
+                            </a>
+                            <a href="javascript:delFile('{{ item.name }}')" data-toggle="tooltip" data-placement="bottom" title="Delete">
+                                <i class="fa fa-trash" ></i>
+                            </a>
+                        </div>
+
+                        <div class="file-attach-icon"></div>
+                        <a href="" class="file-details">
+                            <div class="media-block">
+                                {% if item.name != '..'%}
+                                    <div class="media-left"><i class="fa fa-file"></i></div>
+                                {% endif %}
+                                <div class="media-body">
+                                    <p class="file-name">{{ item.name }}</p>
+                                    <small>{{ item.cdate }} | {{ item.size }}KB</small>
+                                </div>
+                            </div>
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div style="margin-top: 25px;">
+            <button class="btn btn-basic col-md-2 col-md-offset-1" style="background: #ABA49E; color: black" name="folder_creat"  data-toggle="modal" data-target="#create_folder_modal">New folder</button>
+            <button class="btn btn-basic col-md-2 col-md-offset-1" style="background: #ABA49E; color: black" name="file_upload"  data-toggle="modal" data-target="#upload_file_modal">Upload file</button>
+            <button class="btn btn-basic col-md-2 col-md-offset-3" style="background: #ABA49E; color: black" name="upload_history"  data-toggle="modal" data-target="#upload_history_modal">Show upload history</button>
+        </div>
+
+        <!-- The Modal for Create -->
+        <div class="modal" id="create_folder_modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="/" class="form" method="POST">
+                        <!-- Modal Header -->
+                        <div class="modal-header" style="background:grey">
+                            <h3 class="modal-title text-center" style="color: white">Creating Folder</h3>
+                            <button type="button" class="close" data-dismiss="modal" style="color: white"><i class="fa fa-close" style="font-size:20px"></i></button>
+                        </div>
+
+                        <!-- Modal body -->
+                        <div class="modal-body">
+                            <input type="hidden" name="path" value="{{ path }}">
+                            <input type="text" class="form-control" name="foldername" placeholder="Input folder name" required style="border: 1px solid black;">
+                        </div>
+
+                        <!-- Modal footer -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn" style="background: grey; color: white" data-dismiss="modal" onclick="folderCreate();">Create Folder</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- The Modal for Upload -->
+        <div class="modal" id="upload_file_modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form class="form" method="POST" action="{0}" enctype="multipart/form-data">
+                    <!-- Modal Header -->
+                        <div class="modal-header" style="background:grey">
+                            <h3 class="modal-title text-center" style="color: white">Uploading File</h3>
+                            <button type="button" class="close" data-dismiss="modal" style="color: white"><i class="fa fa-close" style="font-size:20px"></i></button>
+                        </div>
+
+                        <!-- Modal body -->
+                        <div class="modal-body">
+                            <input type="hidden" name="path" value="{{ path }}">
+                            Upload File: <input type="file" name="filename"><br>
+                        </div>
+
+                        <!-- Modal footer -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn" style="background: grey; color: white" data-dismiss="modal" onclick="fileUpload();">Upload File</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Modal for Share file -->
+        <div class="modal" id="upload_history_modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <!-- Modal Header -->
+                    <div class="modal-header" style="background:grey">
+                        <h3 class="modal-title text-center" style="color: white">Uploading History</h3>
+                        <button type="button" class="close" data-dismiss="modal" style="color: white"><i class="fa fa-close" style="font-size:20px"></i></button>
+                    </div>
+                    <!-- Modal body -->
+                    <div class="modal-body">
+                      <ul class="list-group">
+                          {% for item in fileitems %}
+                            <li class="list-group-item">{{item.name}}: {{item.cdate}}: {{item.size}}KB</li>
+                          {% endfor %}
+                      </ul>
+                    </div>
+                    <!-- Modal footer -->
+                    <div class="modal-footer">
+                        <button type="button" class="btn" style="background: grey; color: white" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- The Modal for Move -->
+        <div class="modal" id="move_file_modal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <form action="/move" class="form" method="POST">
+                        <!-- Modal Header -->
+                        <div class="modal-header" style="background:grey">
+                            <h3 class="modal-title text-center" style="color: white">Moving File</h3>
+                            <button type="button" class="close" data-dismiss="modal" style="color: white"><i class="fa fa-close" style="font-size:20px"></i></button>
+                        </div>
+
+                        <!-- Modal body -->
+                        <div class="modal-body">
+                            <input type="hidden" name="path" value="{{ path }}">
+                            <input type="hidden" id="myMoveFile" name="movefile" value="">
+                            <input type="text" class="form-control" name="movepath" placeholder="Move to path" required style="border: 1px solid black;">
+                            <div class="">
+                              <ul class="list-group">
+                                  {% for userfolder in userfolderitems %}
+                                      <a href="javascript:input_move_path('{{userfolder.showPath}}')">
+                                        <li class="list-group-item folder">{{userfolder.showPath}}</li>
+                                      </a>
+                                  {% endfor %}
+                              </ul>
+                            </div>
+                        </div>
+
+                        <!-- Modal footer -->
+                        <div class="modal-footer">
+                            <button type="button" class="btn" style="background: grey; color: white" data-dismiss="modal" onclick="fileMove();">Move</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="text/javascript" src="assets/js/main.js"></script>
+
+</body>
+</html>
